@@ -1,0 +1,7 @@
+services:
+  app:
+    build: .
+    container_name: genai-quantum-portfolio-optimization
+    command: bash -c "sleep infinity"
+    volumes:
+      - .:/code
