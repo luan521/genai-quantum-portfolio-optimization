@@ -1,0 +1,2 @@
+- Objective: Determine whether the recurrent‑neural‑network approach remains successful when the optimization involves a larger number of assets.
+- Conclusion: The optimal solution was not reached because the model failed to converge. Likewise, the benchmark run with the COBYLA algorithm also showed no convergence.
