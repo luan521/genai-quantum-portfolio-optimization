@@ -1,5 +1,6 @@
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
+import numpy as np
 
 class QAOA():
     """
@@ -15,7 +16,7 @@ class QAOA():
         qc (qiskit.circuit.quantumcircuit.QuantumCircuit): Quantum circuit with initial initialization
     """
     
-    def __init__(self, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x'):
+    def __init__(self, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x', q_graph=None):
         """
         Initializes the QAOA instance and prepares the quantum circuit.
         
@@ -27,6 +28,7 @@ class QAOA():
             lamb (float): Penalty parameter.
             qc (qiskit.circuit.quantumcircuit.QuantumCircuit): Quantum circuit already initialized.
             mixture_layer (str): x, ring_mixer.
+            q_graph (list): list of tuples containing all connected qubits
         """
         
         self.q = q
@@ -45,6 +47,11 @@ class QAOA():
             for qubit in range(self.n_assets):
                 self.qc.h(qubit)
             self.qc.barrier()
+            
+        if q_graph is None:
+            self.q_graph = [(i, j) for i in range(5) for j in range(i+1, 5)]
+        else:
+            self.q_graph = q_graph
     
     def cost_hamiltonian_wheight(self, i, j=None):
         """
@@ -79,11 +86,17 @@ class QAOA():
             for qubit in range(self.n_assets):
                 self.qc.rx(2*beta, qubit)
         elif self.mixture_layer == 'ring_mixer':
-            for i in range(self.n_assets-1):
-                self.qc.rxx(beta, i, i+1)
-                self.qc.ryy(beta, i, i+1)
-            self.qc.rxx(beta, self.n_assets-1, 0)
-            self.qc.ryy(beta, self.n_assets-1, 0)
+            for e in self.q_graph:
+                self.qc.rxx(
+                            beta, 
+                            e[0], 
+                            e[1]
+                           )
+                self.qc.ryy(
+                            beta, 
+                            e[0], 
+                            e[1]
+                           )
     
     def add_layer(self, gamma, beta):
         """
@@ -100,11 +113,10 @@ class QAOA():
         
         # Implement exp(-i*gamma*H_c)
         # H_c: Cost Hamiltonian
-        for i in range(self.n_assets):
-            for j in range(i+1, self.n_assets):
-                self.qc.cx(i, j)
-                self.qc.rz(2*gamma*self.cost_hamiltonian_wheight(i, j), j)
-                self.qc.cx(i, j)
+        for e in self.q_graph:
+            self.qc.cx(e[0], e[1])
+            self.qc.rz(2*gamma*self.cost_hamiltonian_wheight(e[0], e[1]), e[1])
+            self.qc.cx(e[0], e[1])
         for qubit in range(self.n_assets):
             self.qc.rz(2*gamma*self.cost_hamiltonian_wheight(qubit), qubit)
         self.qc.barrier()

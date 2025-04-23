@@ -5,7 +5,8 @@ from ai_quantum.quantum.qaoa import QAOA
 
 class NN_QAOA(nn.Module):
     
-    def __init__(self, depth, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x', vocab_size=5, latent_dim=5):
+    def __init__(self, depth, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x', q_graph=None,
+                 vocab_size=5, latent_dim=5):
         super(NN_QAOA, self).__init__()
         
         # Quantum circuit parameters
@@ -16,6 +17,7 @@ class NN_QAOA(nn.Module):
         self.lamb = lamb
         self.qc = qc
         self.mixture_layer = mixture_layer
+        self.q_graph = q_graph
         
         self.decoder = nn.Sequential(
             nn.Linear(latent_dim, 128),
@@ -59,7 +61,7 @@ class NN_QAOA(nn.Module):
             for j in range(len(sampled_index_beta)):
                 beta_array.append(self.beta[j][sampled_index_beta[j]])
                 
-            qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer)
+            qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer, self.q_graph)
             for j in range(self.depth):
                 qaoa.add_layer(gamma_array[j], beta_array[j])
             energy_i, count = qaoa.measure_energy()

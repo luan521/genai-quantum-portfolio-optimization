@@ -86,3 +86,6 @@ safetensors==0.5.3
 tokenizers==0.21.1
 chardet==5.2.0
 ipywidgets==8.1.6
+networkx==3.4.2
+cvxpy==1.6.5
+scs==3.2.7.post2

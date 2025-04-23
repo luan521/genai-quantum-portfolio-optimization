@@ -4,7 +4,8 @@ import numpy as np
 from ai_quantum.quantum.qaoa import QAOA
 
 class RNN_QAOA(nn.Module):
-    def __init__(self, vocab_size, embedding_dim, hidden_size, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x'):
+    def __init__(self, vocab_size, embedding_dim, hidden_size, expected_value, cov_matrix, q, B, lamb, qc=None, 
+                 mixture_layer='x', q_graph=None,):
         super(RNN_QAOA, self).__init__()
         self.embedding = nn.Embedding(vocab_size+1, embedding_dim)
         self.rnn = nn.RNN(embedding_dim, hidden_size, batch_first=False)
@@ -18,6 +19,7 @@ class RNN_QAOA(nn.Module):
         self.lamb = lamb
         self.qc = qc
         self.mixture_layer = mixture_layer
+        self.q_graph = q_graph
         
         # Define mappings from tokens to angles for QAOA.
         self.vocab_size = vocab_size
@@ -50,7 +52,7 @@ class RNN_QAOA(nn.Module):
     
     def forward_qc(self, beta_temp, depth):
         data = self.generate_parameter_sequence(beta_temp, depth)
-        qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer)
+        qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer, self.q_graph)
         sum_w = 0
         gamma_array = []
         beta_array = []

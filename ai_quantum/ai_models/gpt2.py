@@ -5,7 +5,7 @@ import numpy as np
 from ai_quantum.quantum.qaoa import QAOA
 
 class GPT2_QAOA(nn.Module):
-    def __init__(self, vocab_size, max_depth, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x',
+    def __init__(self, vocab_size, max_depth, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x', q_graph=None,
                  n_embd=256, n_layer=6, n_head=8):
         super(GPT2_QAOA, self).__init__()
         config = GPT2Config(
@@ -27,6 +27,7 @@ class GPT2_QAOA(nn.Module):
         self.lamb = lamb
         self.qc = qc
         self.mixture_layer = mixture_layer
+        self.q_graph = q_graph
 
         # Define mappings from tokens to angles for QAOA.
         self.vocab = [(i / (vocab_size - 1)) * 2 * np.pi for i in range(vocab_size)]
@@ -58,7 +59,7 @@ class GPT2_QAOA(nn.Module):
 
     def forward_qc(self, beta_temp, depth):
         data = self.generate_parameter_sequence(beta_temp, depth)
-        qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer)
+        qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer, self.q_graph)
         sum_w = 0
         gamma_array = []
         beta_array = []
