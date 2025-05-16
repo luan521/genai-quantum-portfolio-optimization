@@ -4,3 +4,4 @@ __pycache__
 build
 notebooks/debug*
 notebooks/dev*
+sketch
