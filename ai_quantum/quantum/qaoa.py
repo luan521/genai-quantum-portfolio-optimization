@@ -66,7 +66,7 @@ class QAOA():
         """
         
         if j is None:
-            response =2*self.expected_value[i]+2*self.lamb*(2*self.B-self.n_assets)-self.q*self.cov_matrix[i].drop([i], axis=0).sum()
+            response =2*self.expected_value[i]+2*self.lamb*(2*self.B-self.n_assets)-self.q*self.cov_matrix[i].sum()
         else:
             response = self.q*self.cov_matrix[i][j]+2*self.lamb
         return response
