@@ -125,7 +125,7 @@ class QAOA():
         self._add_mixture_layer(beta)
         self.qc.barrier()
              
-    def measure_energy(self):
+    def measure_energy(self, shots=1000, strategy='avarage'):
         """
         Measures the circuit and computes the expected energy.
         
@@ -138,12 +138,18 @@ class QAOA():
 
         simulator = AerSimulator()
         compiled_circuit = transpile(self.qc, simulator)
-        sim_result = simulator.run(self.qc).result()
+        sim_result = simulator.run(self.qc, shots=shots).result()
         counts = sim_result.get_counts()
         
         energy = 0
         total_shots = sum(counts.values())
-        for bitstring, count in counts.items():
+        
+        if strategy == 'min':
+            counts1 = {max(counts, key=counts.get): total_shots}
+        elif strategy == 'avarage':
+            counts1 = counts
+            
+        for bitstring, count in counts1.items():
             prob = count / total_shots
             
             Z = [1 if bitstring[::-1][i] == '0' else -1 for i in range(self.n_assets)]
