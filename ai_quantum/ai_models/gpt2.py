@@ -172,7 +172,7 @@ class GPT2_QAOA(nn.Module):
         """
         
         data = self.generate_parameter_sequence(beta_temp, depth, full_input_ids)
-        if full_input_ids is not None:
+        if full_input_ids is None:
             qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer, self.q_graph)
         sum_w = 0
         gamma_array = []
@@ -185,14 +185,14 @@ class GPT2_QAOA(nn.Module):
         for i in range(depth):
             gamma = self.vocab_gamma[full_input_ids_response[2*i]]
             beta = self.vocab_beta[full_input_ids_response[2*i+1]]
-            if full_input_ids is not None:
+            if full_input_ids is None:
                 qaoa.add_layer(gamma, beta)
             sum_w += data[2*i][0]
             sum_w += data[2*i+1][0]
             gamma_array.append(gamma)
             beta_array.append(beta)
         
-        if full_input_ids is not None:
+        if full_input_ids is None:
             energy = qaoa.measure_energy(precision=precision)
         else:
             energy = np.nan
