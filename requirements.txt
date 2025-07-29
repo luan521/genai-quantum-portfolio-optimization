@@ -89,3 +89,5 @@ ipywidgets==8.1.6
 networkx==3.4.2
 cvxpy==1.6.5
 scs==3.2.7.post2
+plotly==6.2.0
+narwhals==2.0.1

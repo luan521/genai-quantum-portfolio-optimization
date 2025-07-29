@@ -2,24 +2,28 @@ import numpy as np
 from itertools import permutations
 import cvxpy as cp
 import numpy as np
+import pandas as pd
 import networkx as nx
 
-def opt_sort_matrix_ring(matrix):
-    n = matrix.shape[0]
-
-    f_opt = -np.inf
-    opt_perm = None
-    for perm in permutations(range(n)):
-        perm = list(perm)
-        f_perm = ((matrix[perm, perm[1:]+[perm[0]]])**2).sum()
-        if f_perm > f_opt:
-            opt_perm = perm
-            f_opt = f_perm
-            
-    return opt_perm
-
-# Given a matrix C and a graph of allowed entries G, returns the solution [ lambda, X ] for the above SDP.
 def compress_matrix(C, G):
+    """
+    We are interested in approximating some symmetric matrix $C$ by a sparse symmetric matrix $X$, 
+    subject to restrictions of the form $X_{ij} = 0$ for all $ij \in E(\overline G)$. One way to do this is via the following SDP:
+    $$
+    \min \left\{ \lambda : \lambda I \succcurlyeq X - C \succcurlyeq -\lambda I, X \circ A(\overline G) = 0 \right\}
+    $$
+    Solutions with small lambda are good aproximations: note that for $\lambda = 0$, we get $X = C$. 
+    
+    Given a matrix C and a graph of allowed entries G, returns the solution [ lambda, X ] for the above SDP.
+
+    Args:
+        C (pd.DataFrame): Input matrix.
+        G (list[tuple(int)]): List of edges
+        
+    Returns:
+        (float, pd.DataFrame): Solution [ lambda, X ] for the above SDP.
+    """
+    
     np.set_printoptions(edgeitems=3, infstr='inf', linewidth=200, 
                     nanstr='nan', precision=8, suppress=True, 
                     threshold=1000, formatter=None)
@@ -43,4 +47,4 @@ def compress_matrix(C, G):
     prob = cp.Problem(objective, constraints)
     prob.solve(solver=cp.SCS, max_iters=10000, eps=1e-9)
 
-    return lam.value, X.value
+    return lam.value, pd.DataFrame(X.value)
