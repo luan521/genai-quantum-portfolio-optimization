@@ -19,7 +19,8 @@ class GPT2_QAOA(nn.Module):
         lamb (float): Penalty parameter.
         qc (qiskit.circuit.quantumcircuit.QuantumCircuit): Quantum circuit already initialized.
         mixture_layer (str): x, ring_mixer.
-        q_graph (list): list of tuples containing all connected qubits
+        edges_hc (list): list of tuples containing all connected qubits in the cost hamiltonian
+        edges_hb (list): list of tuples containing all connected qubits in the mixture hamiltonian
         n_embd (int): Dimensionality of the embeddings and hidden states.
         n_layer (int): Number of hidden layers in the Transformer encoder.
         n_head (int): Number of attention heads for each attention layer in the Transformer encoder.
@@ -35,7 +36,8 @@ class GPT2_QAOA(nn.Module):
                  lamb, 
                  qc=None, 
                  mixture_layer='x', 
-                 q_graph=None,
+                 edges_hc=None, 
+                 edges_hb=None,
                  n_embd=192, 
                  n_layer=4, 
                  n_head=8):
@@ -52,7 +54,8 @@ class GPT2_QAOA(nn.Module):
             lamb (float): Penalty parameter.
             qc (qiskit.circuit.quantumcircuit.QuantumCircuit): Quantum circuit already initialized.
             mixture_layer (str): x, ring_mixer.
-            q_graph (list): list of tuples containing all connected qubits
+            edges_hc (list): list of tuples containing all connected qubits in the cost hamiltonian
+            edges_hb (list): list of tuples containing all connected qubits in the mixture hamiltonian
             n_embd (int): Dimensionality of the embeddings and hidden states.
             n_layer (int): Number of hidden layers in the Transformer encoder.
             n_head (int): Number of attention heads for each attention layer in the Transformer encoder.
@@ -80,7 +83,8 @@ class GPT2_QAOA(nn.Module):
         self.lamb = lamb
         self.qc = qc
         self.mixture_layer = mixture_layer
-        self.q_graph = q_graph
+        self.edges_hc = edges_hc
+        self.edges_hb = edges_hb
 
         # Define mappings from tokens to angles for QAOA.
         self.vocab_gamma = np.linspace(0, 2*np.pi, vocab_size)
@@ -173,7 +177,17 @@ class GPT2_QAOA(nn.Module):
         
         data = self.generate_parameter_sequence(beta_temp, depth, full_input_ids)
         if full_input_ids is None:
-            qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer, self.q_graph)
+            qaoa = QAOA(
+                        self.expected_value, 
+                        self.cov_matrix, 
+                        self.q, 
+                        self.B, 
+                        self.lamb, 
+                        self.qc, 
+                        self.mixture_layer, 
+                        self.edges_hc, 
+                        self.edges_hb
+                       )
         sum_w = 0
         gamma_array = []
         beta_array = []
@@ -215,7 +229,16 @@ class GPT2_QAOA(nn.Module):
         """
         
         data = self.generate_parameter_sequence(beta_temp, depth, full_input_ids)
-        qaoa = QAOA(self.expected_value, self.cov_matrix, self.q, self.B, self.lamb, self.qc, self.mixture_layer, self.q_graph)   
+        qaoa = QAOA(
+                    self.expected_value, 
+                    self.cov_matrix, 
+                    self.q, self.B, 
+                    self.lamb, 
+                    self.qc, 
+                    self.mixture_layer, 
+                    self.edges_hc, 
+                    self.edges_hb
+                   )   
         for i in range(depth):
             gamma = self.vocab_gamma[data[2*i][1][0]-1]
             beta = self.vocab_beta[data[2*i+1][1][0]-1]

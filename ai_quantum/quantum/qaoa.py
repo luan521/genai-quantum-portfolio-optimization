@@ -16,10 +16,11 @@ class QAOA():
         lamb (float): Penalty parameter.
         qc (qiskit.circuit.quantumcircuit.QuantumCircuit): Quantum circuit already initialized.
         mixture_layer (str): x, ring_mixer.
-        q_graph (list): list of tuples containing all connected qubits
+        edges_hc (list): list of tuples containing all connected qubits in the cost hamiltonian
+        edges_hb (list): list of tuples containing all connected qubits in the mixture hamiltonian
     """
     
-    def __init__(self, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x', q_graph=None):
+    def __init__(self, expected_value, cov_matrix, q, B, lamb, qc=None, mixture_layer='x', edges_hc=None, edges_hb=None):
         """
         Initializes the QAOA instance and prepares the quantum circuit.
         
@@ -31,7 +32,8 @@ class QAOA():
             lamb (float): Penalty parameter.
             qc (qiskit.circuit.quantumcircuit.QuantumCircuit): Quantum circuit already initialized.
             mixture_layer (str): x, ring_mixer.
-            q_graph (list): list of tuples containing all connected qubits
+            edges_hc (list): list of tuples containing all connected qubits in the cost hamiltonian
+            edges_hb (list): list of tuples containing all connected qubits in the mixture hamiltonian
         """
         
         self.q = q
@@ -52,11 +54,18 @@ class QAOA():
             self.qc0.barrier()
             
         self.qc = self.qc0.copy()
+        
+        self.edges_complete = [(i, j) for i in range(self.n_assets) for j in range(i+1, self.n_assets)]
             
-        if q_graph is None:
-            self.q_graph = [(i, j) for i in range(self.n_assets) for j in range(i+1, self.n_assets)]
+        if edges_hc is None:
+            self.edges_hc = self.edges_complete
         else:
-            self.q_graph = q_graph
+            self.edges_hc = edges_hc
+            
+        if edges_hb is None:
+            self.edges_hb = self.edges_complete
+        else:
+            self.edges_hb = edges_hb
             
     def restart(self):
         """
@@ -101,7 +110,7 @@ class QAOA():
             for qubit in range(self.n_assets):
                 self.qc.rx(2*beta, qubit)
         elif self.mixture_layer == 'ring_mixer':
-            for e in self.q_graph:
+            for e in self.edges_hb:
                 self.qc.rxx(
                             beta, 
                             e[0], 
@@ -128,7 +137,7 @@ class QAOA():
         
         # Implement exp(-i*gamma*H_c)
         # H_c: Cost Hamiltonian
-        for e in self.q_graph:
+        for e in self.edges_hc:
             self.qc.cx(e[0], e[1])
             self.qc.rz(2*gamma*self.cost_hamiltonian_wheight(e[0], e[1]), e[1])
             self.qc.cx(e[0], e[1])
@@ -148,7 +157,6 @@ class QAOA():
             precision (float): Precision for the energy measurement.
         Returns:
             float: The computed energy (expectation value) of the quantum circuit with respect to the cost Hamiltonian.
-            
         """
         
         HI = ""
@@ -157,7 +165,7 @@ class QAOA():
         for q in range(self.n_assets): 
             Hq = HI[:q]+"Z"+HI[q+1:]
             H_C0.append((Hq, self.cost_hamiltonian_wheight(self.n_assets-1-q)))
-        for e in self.q_graph:
+        for e in self.edges_complete:
             He = HI[:e[0]]+"Z"+HI[e[0]+1:]
             He = He[:e[1]]+"Z"+He[e[1]+1:]
             H_C0.append((He, self.cost_hamiltonian_wheight(self.n_assets-1-e[0], 
